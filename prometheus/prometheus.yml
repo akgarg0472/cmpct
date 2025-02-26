@@ -1,0 +1,115 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "urlshortener_api_gateway"
+    metrics_path: "/admin/management/prometheus"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-api-gateway"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_auth_service"
+    metrics_path: "/prometheus/metrics"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-auth-service"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_service"
+    metrics_path: "/admin/management/prometheus"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-service"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_payment_service"
+    metrics_path: "/admin/management/prometheus"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-payment-service"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_subscription_service"
+    metrics_path: "/admin/management/prometheus"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-subscription-service"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_profile_service"
+    metrics_path: "/admin/management/prometheus"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-profile-service"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_statistics_service"
+    metrics_path: "/prometheus/metrics"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-statistics-service"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_notification_service"
+    metrics_path: "/metrics"
+    consul_sd_configs:
+      - server: "urlshortener-consul:8500"
+        services: ["urlshortener-notification-service"]
+    relabel_configs:
+      - source_labels:
+          [__meta_consul_service_address, __meta_consul_service_port]
+        separator: ":"
+        regex: (.+);(\d+)
+        target_label: _address_
+        replacement: $1:$2
+
+  - job_name: "urlshortener_mysql"
+    static_configs:
+      - targets: ["urlshortener-mysql-exporter:9104"]

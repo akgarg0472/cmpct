@@ -1,0 +1,288 @@
+networks:
+  urlshortener:
+    driver: bridge
+
+services:
+  urlshortener-consul:
+    image: consul:1.15.4
+    container_name: urlshortener-consul
+    networks:
+      - urlshortener
+    mem_limit: 512m
+    ports:
+      - "8500:8500"
+    restart: on-failure
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: urlshortener-prometheus
+    volumes:
+      - ../prometheus/:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    networks:
+      - urlshortener
+    ports:
+      - "9090:9090"
+    restart: on-failure
+    mem_limit: 1g
+
+  urlshortener-mysql-exporter:
+    image: prom/mysqld-exporter
+    container_name: urlshortener-mysql-exporter
+    volumes:
+      - /home/urlshortener/prometheus/.my.cnf:/.my.cnf
+    networks:
+      - urlshortener
+    mem_limit: 256m
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: urlshortener-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - urlshortener
+    restart: on-failure
+    mem_limit: 512m
+
+  urlshortener-mysql:
+    image: mysql
+    container_name: urlshortener-mysql
+    env_file:
+      - .env.shared
+    mem_limit: 1g
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - urlshortener
+    restart: on-failure
+
+  urlshortener-mongodb:
+    image: mongo
+    container_name: urlshortener-mongodb
+    env_file:
+      - .env.shared
+    mem_limit: 512m
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - urlshortener
+    restart: on-failure
+
+  urlshortener-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: urlshortener-elasticsearch
+    env_file:
+      - .env.shared
+    mem_limit: 2g
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - urlshortener
+    restart: on-failure
+
+  urlshortener-kafka:
+    image: apache/kafka
+    container_name: urlshortener-kafka
+    env_file:
+      - .env.shared
+    mem_limit: 1g
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - urlshortener
+    restart: on-failure
+
+  urlshortener-redis:
+    image: redis
+    container_name: urlshortener-redis
+    command: [ "redis-server", "--appendonly", "yes" ]
+    mem_limit: 256m
+    volumes:
+      - redis_data:/data
+    networks:
+      - urlshortener
+    restart: on-failure
+
+  urlshortener-api-gateway:
+    image: akgarg0472/urlshortener-api-gateway:latest
+    container_name: urlshortener-api-gateway
+    env_file:
+      - .env.urlshortener-api-gateway
+    mem_limit: 512m
+    volumes:
+      - shared_logs:/tmp/logs/
+    ports:
+      - "8765:8765"
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-consul
+    restart: on-failure
+
+  urlshortener-service:
+    image: akgarg0472/urlshortener-service:latest
+    container_name: urlshortener-service
+    env_file:
+      - .env.urlshortener-service
+    mem_limit: 1g
+    volumes:
+      - shared_logs:/tmp/logs/
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-consul
+      - urlshortener-mongodb
+      - urlshortener-kafka
+    restart: on-failure
+
+  urlshortener-profile-service:
+    image: akgarg0472/urlshortener-profile-service:latest
+    container_name: urlshortener-profile-service
+    env_file:
+      - .env.urlshortener-profile-service
+    mem_limit: 1g
+    volumes:
+      - shared_logs:/tmp/logs/
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-consul
+      - urlshortener-mysql
+      - urlshortener-kafka
+    restart: on-failure
+
+  urlshortener-auth-service:
+    image: akgarg0472/urlshortener-auth-service:latest
+    container_name: urlshortener-auth-service
+    env_file:
+      - .env.urlshortener-auth-service
+    mem_limit: 512m
+    volumes:
+      - shared_logs:/tmp/logs/
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-consul
+      - urlshortener-mysql
+      - urlshortener-kafka
+    restart: on-failure
+
+  urlshortener-statistics-service:
+    image: akgarg0472/urlshortener-statistics-service:latest
+    container_name: urlshortener-statistics-service
+    env_file:
+      - .env.urlshortener-statistics-service
+    mem_limit: 512m
+    volumes:
+      - shared_logs:/tmp/logs/statistics/
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-consul
+      - urlshortener-kafka
+      - urlshortener-redis
+      - urlshortener-elasticsearch
+    restart: on-failure
+
+  urlshortener-notification-service:
+    image: akgarg0472/urlshortener-notification-service:latest
+    container_name: urlshortener-notification-service
+    env_file:
+      - .env.urlshortener-notification-service
+    mem_limit: 512m
+    volumes:
+      - shared_logs:/tmp/logs/notification/
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-kafka
+    restart: on-failure
+
+  urlshortener-subscription-service:
+    image: akgarg0472/urlshortener-subscription-service:latest
+    container_name: urlshortener-subscription-service
+    env_file:
+      - .env.urlshortener-subscription-service
+    mem_limit: 1g
+    volumes:
+      - shared_logs:/tmp/logs/subscription/
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-consul
+      - urlshortener-mysql
+      - urlshortener-kafka
+      - urlshortener-redis
+    restart: on-failure
+
+  urlshortener-payment-service:
+    image: akgarg0472/urlshortener-payment-service:latest
+    container_name: urlshortener-payment-service
+    env_file:
+      - .env.urlshortener-payment-service
+    mem_limit: 1g
+    volumes:
+      - shared_logs:/tmp/logs/payment/
+    networks:
+      - urlshortener
+    depends_on:
+      - urlshortener-subscription-service
+      - urlshortener-consul
+      - urlshortener-mysql
+      - urlshortener-kafka
+      - urlshortener-redis
+    restart: on-failure
+
+  urlshortener-ui:
+    image: akgarg0472/urlshortener-ui
+    container_name: urlshortener-ui
+    env_file:
+      - .env.urlshortener-ui
+    ports:
+      - "3000:80"
+    restart: on-failure
+
+volumes:
+  mysql_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /tmp/urlshortener/data/mysql
+      o: bind
+  mongodb_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /tmp/urlshortener/data/mongo
+      o: bind
+  elasticsearch_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /tmp/urlshortener/data/elastic
+      o: bind
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /tmp/urlshortener/data/redis
+      o: bind
+  kafka_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /tmp/urlshortener/data/kafka
+      o: bind
+  shared_logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: /tmp/urlshortener/logs
+      o: bind
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

@@ -49,7 +49,7 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Acts as the entry point to the application. All backend requests are routed through it; based on the requested resource, it load balances the requests and forwards them to the respective microservice after performing rate limiting checks. It also handles user authentication via JWT tokens.
 
-   - **Repository:** [API Gateway Repo](#)
+   - **Repository:** [API Gateway Repo](https://github.com/akgarg0472/url-shortener-apigateway)
 
 2. **URL Shortener Auth Service**
 
@@ -59,7 +59,8 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Manages authentication and authorization tasks, including JWT token generation/validation, handling OAuth callbacks, and orchestrating the password reset pipeline from initiation to completion.
 
-   - **Repository:** [URL Shortener Auth Service Repo](#)
+   - **Repository:** [URL Shortener Auth Service Repo](https://github.com/akgarg0472/url-shortener-authservice)
+   - **Java SDK:** [AuthService Java Client](https://github.com/akgarg0472/authservice-java-client)
 
 3. **URL Shortener Service**
 
@@ -69,7 +70,7 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Responsible for creating short URLs and retrieving the original URLs. It plays a crucial role in ensuring quick redirections and efficient URL management.
 
-   - **Repository:** [URL Shortener Service Repo](#)
+   - **Repository:** [URL Shortener Service Repo](https://github.com/akgarg0472/urlshortener)
 
 4. **URL Shortener Statistics Service**
 
@@ -79,7 +80,7 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Handles the storage and retrieval of metrics data. It exposes REST endpoints to query various data sets from ElasticSearch and leverages Kafka to receive real-time metrics from URL shortener service instances.
 
-   - **Repository:** [URL Shortener Statistics Service Repo](#)
+   - **Repository:** [URL Shortener Statistics Service Repo](https://github.com/akgarg0472/url-shortener-statisticsservice)
 
 5. **URL Shortener Subscription Service**
 
@@ -89,7 +90,7 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Manages user subscription data using MySQL for persistent storage and Redis for caching. It also uses Kafka for event streaming to keep other services updated with subscription events.
 
-   - **Repository:** [URL Shortener Subscription Service Repo](#)
+   - **Repository:** [URL Shortener Subscription Service Repo](https://github.com/akgarg0472/urlshortener-subs-service)
 
 6. **URL Shortener Payment Service**
 
@@ -99,7 +100,7 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Oversees the payment process from order creation to final payment settlement. It utilizes Redis for caching, MySQL for data persistence, and Kafka for event streaming. Currently integrated with PayPal, it offers flexibility for future expansion to additional payment gateways.
 
-   - **Repository:** [URL Shortener Payment Service Repo](#)
+   - **Repository:** [URL Shortener Payment Service Repo](https://github.com/akgarg0472/urlshortener-payment-service)
 
 7. **URL Shortener Profile Service**
 
@@ -109,7 +110,7 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Manages user profile data and ensures seamless integration with other services such as the notification service via Kafka event streaming. Data is securely stored in MySQL.
 
-   - **Repository:** [URL Shortener Profile Service Repo](#)
+   - **Repository:** [URL Shortener Profile Service Repo](https://github.com/akgarg0472/urlshortener-profileservice)
 
 8. **URL Shortener Notification Service**
 
@@ -119,7 +120,7 @@ _High Level Architecture Diagram of `cmpct`._
    - **Description:**
      Responsible for sending notifications to users, primarily through email using Google SMTP. It ensures timely delivery of alerts and updates across the platform.
 
-   - **Repository:** [URL Shortener Notification Service Repo](#)
+   - **Repository:** [URL Shortener Notification Service Repo](https://github.com/akgarg0472/urlshortener-notification-service)
 
 ### Metrics & Monitoring
 
@@ -128,6 +129,18 @@ _High Level Architecture Diagram of `cmpct`._
 
 - **Visualization:**
   The collected metrics are aggregated and visualized on Grafana dashboards, offering real-time insights into the system's performance and health. Pre-configured Grafana dashboard JSON files are available in the [grafana-dashboards](./grafana-dashboards) directory, enabling quick deployment and easy customization of monitoring views.
+
+## System Requirements
+
+To run `cmpct` locally, we recommend the following minimum specifications:
+
+- **CPU:** Quad-core processor (4+ cores)
+- **Memory:** 8 GB RAM (16 GB or more recommended)
+- **Disk Space:** At least 20 GB of free space
+- **Operating System:** Linux, macOS, or Windows (with Docker support)
+- **Software:** Latest versions of Docker and Docker Compose, along with Git
+
+If your system does not meet these requirements, you can always try the live version of cmpct at [https://ui.cmpct.xyz/](https://ui.cmpct.xyz/).
 
 ## Installation & Setup
 
@@ -139,14 +152,20 @@ Follow these steps to get the entire cmpct system up and running quickly:
    git clone https://github.com/akgarg0472/cmpct.git
    ```
 2. **Navigate to the Docker Compose Directory:**
-   Change to the directory containing the Docker Compose file and the environment configuration files:
+   Change to the [docker-compose](./docker-compose/) containing the Docker Compose file and the environment configuration files:
 
    ```bash
-   cd path/to/docker
+   cd docker-compose
    ```
 
-3. **Configure Environment Variables:**
-   Ensure you have set up the required environment variables. Review the provided `.env` files this directory and updatee them with your configuration details if required.
+3. **Configure Environment:**
+   Ensure you have set up the required environment variables. Review the provided `.env` files in this directory and update them with your configuration details if required.
+
+   Run the following command to create the required directories for storing container logs and data:
+
+   ```bash
+   mkdir -p /tmp/urlshortener/data/{mysql,mongo,elastic,redis,kafka} /tmp/urlshortener/logs
+   ```
 
 4. **Start the System:**
    Execute the following command to build and launch all services:
@@ -166,25 +185,27 @@ Follow these steps to get the entire cmpct system up and running quickly:
 
    You should see the various services initializing and running.
 
-6. **Configure UI:**
-   Clone the main repository of UI code to your local machine:
+   Alternatively, if you want to track the resource usage (such as CPU and memory consumption) of the containers managed by Docker Compose, run:
 
    ```bash
-   git clone https://github.com/akgarg0472/urlshortener-ui.git
+   docker compose stats
    ```
 
-   Navigate to the cloned repository directory:
+   This command provides a live overview of the resource utilization for each container in the composition. Make sure to run this command from within the directory that contains your `docker-compose.yml` file for accurate results.
 
-   ```bash
-   cd urlshortener-ui
-   ```
+   ### Tips:
 
-   Download all dependencies and start UI:
+   - If the logs seem overwhelming or difficult to read, you can filter the logs for a specific service by adding the service name at the end of the command, like this:
 
-   ```bash
-   npm i
-   npm start
-   ```
+     ```bash
+     docker compose logs -f <service-name>
+     ```
+
+   - You can also combine the docker-compose logs command with grep to search for specific keywords, such as `errors`:
+
+     ```bash
+     docker compose logs -f <service-name> | grep 'error'
+     ```
 
    Once the services are up, you can access the frontend at `http://localhost:3000` and explore the cmpct platform.
 
@@ -201,11 +222,11 @@ For historical reference, the initial Figma design is provided below. Although i
 
 ## License
 
-cmpct is open source and licensed under the [AGPL 3.0 License](./LICENSE). This license applies to all components of the project, including backend services, frontend code, and associated documentation.
+`cmpct` is open source and licensed under the [AGPL 3.0 License](./LICENSE). This license applies to all components of the project, including backend services, frontend code, and associated documentation.
 
 ## Contribution
 
-We welcome contributions to cmpct! Whether you're fixing bugs, adding new features, or improving documentation, your help is greatly appreciated. To contribute, please follow these guidelines:
+We welcome contributions to `cmpct`! Whether you're fixing bugs, adding new features, or improving documentation, your help is greatly appreciated. To contribute, please follow these guidelines:
 
 1. **Fork the Repository:**
    Create your own fork of the repository and clone it locally.
